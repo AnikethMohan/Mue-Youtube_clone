@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:mue/Home/home_screen.dart';
+import 'package:mue/view/Home/home_screen.dart';
 
 void main() async {
   runApp(const MyApp());

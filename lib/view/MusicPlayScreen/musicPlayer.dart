@@ -133,7 +133,8 @@ class _MusicPlayerState extends State<MusicPlayer> {
               text: '${widget.albumName}',
               fontSize: 25,
               weight: FontWeight.bold,
-              align: TextAlign.center),
+              align: TextAlign.center,
+              color: kwhite),
           const SizedBox(
             height: 10,
           ),
@@ -141,7 +142,8 @@ class _MusicPlayerState extends State<MusicPlayer> {
               ? TextMue(
                   text: '${widget.artist}',
                   fontSize: 17,
-                  weight: FontWeight.w600)
+                  weight: FontWeight.w600,
+                  color: kwhite)
               : SizedBox(),
           const SizedBox(
             height: 10,

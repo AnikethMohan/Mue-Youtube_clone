@@ -4,9 +4,12 @@ import 'dart:async';
 
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:mue/const/styles.dart';
+import 'package:mue/view/search_result.dart';
 import 'package:video_player/video_player.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
@@ -19,7 +22,10 @@ class VideoPlayerScreen extends StatefulWidget {
     required this.channelData,
     required this.description,
     required this.duration,
+    required this.searchresult,
     this.views,
+    this.yt,
+    required this.currentVideoindex,
   });
   final videoUrl;
   final title;
@@ -27,6 +33,9 @@ class VideoPlayerScreen extends StatefulWidget {
   final views;
   final description;
   final Duration duration;
+  final VideoSearchList searchresult;
+  final YoutubeExplode? yt;
+  final currentVideoindex;
 
   @override
   State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
@@ -40,6 +49,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   Duration? currenpos;
   bool isButtonEnabled = false;
   bool isFullScreen = false;
+  String subscribers = '';
 
   @override
   void initState() {
@@ -95,10 +105,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   fullscreen() {
     if (isFullScreen == false) {
       setState(() {
+        SystemChrome.setPreferredOrientations(
+            [DeviceOrientation.landscapeLeft]);
         isFullScreen = true;
       });
     } else {
       setState(() {
+        SystemChrome.setPreferredOrientations(
+            [DeviceOrientation.landscapeLeft]);
         isFullScreen = false;
       });
     }
@@ -107,73 +121,142 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   @override
   Widget build(BuildContext context) {
     views = formatNumber(widget.views);
+    subscribers = formatNumber(widget.channelData.subscribersCount);
 
     double width = MediaQuery.of(context).size.width;
 
     bool isExpanded = false;
     return SafeArea(
       child: Scaffold(
-        backgroundColor: kblack,
-        body: Container(
-          color: kblack,
-          child: Wrap(
-            children: [
-              Stack(
+        backgroundColor: Colors.white,
+        body: ListView(
+          children: [
+            Container(
+              color: Colors.white,
+              child: Wrap(
                 children: [
-                  _controller.value.isInitialized
-                      ? RotatedBox(
-                          quarterTurns: isFullScreen ? 1 : 0,
-                          child: AspectRatio(
-                            aspectRatio: _controller.value.aspectRatio,
-                            child: GestureDetector(
-                              onTap: () {
-                                print('pressed');
-                                makeitInvisible();
-                              },
-                              child: VideoPlayer(
-                                _controller,
+                  Stack(
+                    children: [
+                      _controller.value.isInitialized
+                          ? AspectRatio(
+                              aspectRatio: _controller.value.aspectRatio,
+                              child: GestureDetector(
+                                onTap: () {
+                                  print('pressed');
+                                  makeitInvisible();
+                                },
+                                child: VideoPlayer(
+                                  _controller,
+                                ),
                               ),
+                            )
+                          : const SizedBox(),
+                      _controller.value.isInitialized
+                          ? FullScreenProgressBar()
+                          : SizedBox(),
+                      PlayBackControls(),
+                      Visibility(
+                        visible: isButtonEnabled,
+                        child: Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: IconButton(
+                              onPressed: () {
+                                // fullscreen();
+                                Fluttertoast.showToast(
+                                    msg:
+                                        "Just rotate your phone for full-screen",
+                                    toastLength: Toast.LENGTH_SHORT,
+                                    gravity: ToastGravity.CENTER,
+                                    timeInSecForIosWeb: 1,
+                                    backgroundColor: kpink,
+                                    textColor: Colors.white,
+                                    fontSize: 16.0);
+                              },
+                              icon: Icon(
+                                Icons.zoom_out_map_rounded,
+                                color: kwhite,
+                              )),
+                        ),
+                      )
+                    ],
+                  ),
+                  // VideoProgressIndicator(
+                  //   _controller,
+                  //   allowScrubbing: true,
+                  //   colors: VideoProgressColors(
+                  //     playedColor: kyellow,
+                  //   ),
+                  // )
+                  _controller.value.isInitialized
+                      ? HalfScreenProgressBar()
+                      : const SizedBox(),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  Video_Description(width, isExpanded),
+                  Container(
+                    margin: EdgeInsets.symmetric(horizontal: 15.w),
+                    height: 90,
+                    width: width,
+                    decoration: const BoxDecoration(
+                        border: BorderDirectional(
+                            top: BorderSide(color: Color(0xffEEEEEf)),
+                            bottom: BorderSide(color: Color(0xffEEEEEf)))),
+                    child: Row(
+                      children: [
+                        Channel_logo(radius: 25.r),
+                        SizedBox(
+                          width: 7.w,
+                        ),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TextMue(
+                                text: widget.channelData.title,
+                                fontSize: 16.sp,
+                                weight: FontWeight.bold,
+                                color: kblack),
+                            SizedBox(
+                              height: 5.h,
                             ),
+                            TextMue(
+                                text: '$subscribers subscribers',
+                                fontSize: 12.sp,
+                                weight: FontWeight.w500,
+                                color: const Color(0xff424242)),
+                          ],
+                        ),
+                        SizedBox(
+                          width: 30.w,
+                        ),
+                        Container(
+                          height: 30.h,
+                          width: 92.w,
+                          decoration: BoxDecoration(
+                              color: kpink,
+                              borderRadius: BorderRadius.circular(20.r)),
+                          child: Center(
+                            child: TextMue(
+                                text: 'Subscribe',
+                                fontSize: 15.sp,
+                                weight: FontWeight.w500,
+                                color: kwhite),
                           ),
                         )
-                      : const SizedBox(),
-                  _controller.value.isInitialized
-                      ? FullScreenProgressBar()
-                      : SizedBox(),
-                  PlayBackControls(),
-                  Visibility(
-                    visible: isButtonEnabled,
-                    child: Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: IconButton(
-                          onPressed: () {
-                            fullscreen();
-                          },
-                          icon: const Icon(
-                            Icons.zoom_out_map_rounded,
-                            color: Colors.white,
-                          )),
+                      ],
                     ),
                   )
                 ],
               ),
-              // VideoProgressIndicator(
-              //   _controller,
-              //   allowScrubbing: true,
-              //   colors: VideoProgressColors(
-              //     playedColor: kyellow,
-              //   ),
-              // )
-              _controller.value.isInitialized
-                  ? HalfScreenProgressBar()
-                  : const SizedBox(),
-              const SizedBox(
-                height: 10,
-              ),
-              Video_Description(width, isExpanded)
-            ],
-          ),
+            ),
+            SearchResultList(
+              searchResult: widget.searchresult,
+              yt: widget.yt,
+              currentvideoIndex: widget.currentVideoindex,
+            )
+          ],
         ),
         // Center(
         //   child: _controller.value.isInitialized
@@ -200,10 +283,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           child: Visibility(
             visible: !isFullScreen,
             child: ProgressBar(
-              thumbColor: kyellow,
+              thumbColor: kpink,
               thumbRadius: isButtonEnabled ? 10 : 0,
               baseBarColor: const Color(0xff35373D),
-              progressBarColor: kyellow,
+              progressBarColor: kpink,
               progress: currenpos!,
               bufferedBarColor: const Color.fromARGB(255, 193, 194, 197),
               buffered: const Duration(seconds: 5),
@@ -225,55 +308,52 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       child: Center(
         child: Visibility(
           visible: isButtonEnabled,
-          child: RotatedBox(
-            quarterTurns: isFullScreen ? 1 : 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                IconButton(
-                    onPressed: () async {
-                      _controller.seekTo((await _controller.position)! -
-                          const Duration(seconds: 10));
-                    },
-                    icon: Icon(
-                      Icons.replay_10_rounded,
-                      size: 40.sp,
-                      color: Colors.white,
-                    )),
-                SizedBox(
-                  width: 10.w,
-                ),
-                IconButton(
-                  onPressed: () {
-                    _controller.value.isPlaying
-                        ? _controller.pause()
-                        : _controller.play();
-                    setState(() {});
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              IconButton(
+                  onPressed: () async {
+                    _controller.seekTo((await _controller.position)! -
+                        const Duration(seconds: 10));
                   },
                   icon: Icon(
-                    _controller.value.isPlaying
-                        ? Icons.pause_outlined
-                        : Icons.play_arrow_rounded,
-                    size: 50.sp,
+                    Icons.replay_10_rounded,
+                    size: 40.sp,
                     color: Colors.white,
-                  ),
+                  )),
+              SizedBox(
+                width: 10.w,
+              ),
+              IconButton(
+                onPressed: () {
+                  _controller.value.isPlaying
+                      ? _controller.pause()
+                      : _controller.play();
+                  setState(() {});
+                },
+                icon: Icon(
+                  _controller.value.isPlaying
+                      ? Icons.pause_outlined
+                      : Icons.play_arrow_rounded,
+                  size: 50.sp,
+                  color: Colors.white,
                 ),
-                SizedBox(
-                  width: 20.w,
-                ),
-                IconButton(
-                    onPressed: () async {
-                      _controller.seekTo((await _controller.position)! +
-                          Duration(seconds: 10));
-                    },
-                    icon: Icon(
-                      Icons.forward_10_rounded,
-                      size: 40.sp,
-                      color: Colors.white,
-                    )),
-              ],
-            ),
+              ),
+              SizedBox(
+                width: 20.w,
+              ),
+              IconButton(
+                  onPressed: () async {
+                    _controller.seekTo(
+                        (await _controller.position)! + Duration(seconds: 10));
+                  },
+                  icon: Icon(
+                    Icons.forward_10_rounded,
+                    size: 40.sp,
+                    color: Colors.white,
+                  )),
+            ],
           ),
         ),
       ),
@@ -296,10 +376,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     child: ProgressBar(
-                      thumbColor: kyellow,
+                      thumbColor: kpink,
                       thumbRadius: isButtonEnabled ? 10 : 0,
                       baseBarColor: Color(0xff35373D),
-                      progressBarColor: kyellow,
+                      progressBarColor: kpink,
                       progress: currenpos!,
                       bufferedBarColor:
                           const Color.fromARGB(255, 193, 194, 197),
@@ -326,7 +406,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       width: width,
       child: ExpansionTile(
         iconColor: Colors.red,
-        collapsedIconColor: Colors.white,
+        collapsedIconColor: kblack,
         initiallyExpanded: isExpanded,
         onExpansionChanged: (value) {
           print('is expanded');
@@ -342,7 +422,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
               fontSize: 20.sp,
               maxlines: isExpanded == true ? 3 : 4,
               weight: FontWeight.w600,
-              align: TextAlign.center),
+              align: TextAlign.start,
+              color: kblack),
+        ),
+        subtitle: Padding(
+          padding: EdgeInsets.only(top: 5.h),
+          child: TextMue(
+              text: '${views.toString()} views',
+              fontSize: 12.sp,
+              weight: FontWeight.w400,
+              color: kblack),
         ),
 
         children: [
@@ -356,12 +445,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                     alignment: Alignment.centerLeft,
                     child: Row(
                       children: [
-                        ClipOval(
-                          child: CircleAvatar(
-                              child: Image.network(
-                            widget.channelData.logoUrl,
-                          )),
-                        ),
+                        Channel_logo(),
                         SizedBox(
                           width: 7.w,
                         ),
@@ -370,7 +454,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                                 text: widget.channelData.title,
                                 fontSize: 15.sp,
                                 weight: FontWeight.w500,
-                                color: Color(0xffD5D6D6))
+                                color: kblack)
                             : SizedBox()
                       ],
                     ),
@@ -391,7 +475,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                               text: views.toString(),
                               fontSize: 20.sp,
                               weight: FontWeight.bold,
-                              color: Colors.white),
+                              color: kblack),
                           SizedBox(
                             height: 5.h,
                           ),
@@ -399,7 +483,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                               text: 'Views',
                               fontSize: 15.sp,
                               weight: FontWeight.w500,
-                              color: Colors.white),
+                              color: kblack),
                         ],
                       )
                     : const SizedBox(),
@@ -414,19 +498,35 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           ),
           Container(
             child: TextMue(
-              text: widget.description,
-              fontSize: 12.sp,
-              weight: FontWeight.w500,
-            ),
+                text: widget.description,
+                fontSize: 12.sp,
+                weight: FontWeight.w500,
+                color: kblack),
           )
         ],
       ),
     );
   }
 
+  ClipOval Channel_logo({double radius = 20}) {
+    return ClipOval(
+      child: CircleAvatar(
+          radius: radius,
+          child: Image.network(
+            widget.channelData.logoUrl,
+          )),
+    );
+  }
+
   @override
   void dispose() {
     super.dispose();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeRight,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
     _controller.dispose();
   }
 }
