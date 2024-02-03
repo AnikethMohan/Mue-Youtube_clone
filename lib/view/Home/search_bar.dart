@@ -87,7 +87,7 @@ class _SearchBarResultState extends State<SearchBarResult> {
       builder: (BuildContext context, SearchController controller) {
         return InkWell(
           onTap: () {
-            controller!.openView();
+            controller.openView();
           },
           child: Container(
             width: 270.w,

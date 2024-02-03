@@ -16,7 +16,7 @@ Text TextMue(
       fontFamily: 'Spotify Circular',
       fontSize: fontSize,
       fontWeight: weight,
-      color: color ?? Colors.black,
+      color: color,
       overflow: overflow,
     ),
   );
